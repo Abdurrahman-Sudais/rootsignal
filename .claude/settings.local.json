@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(python3 -)",
+      "Bash(sed -i '' '/eslint-disable-next-line/d' src/dashboard/InspectionModal.tsx src/dashboard/ObservationModal.tsx)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(sed -i '' 's/Math.max\\(200, entry.contentRect.width\\)/Math.max\\(140, Math.floor\\(entry.contentRect.width\\)\\)/' src/components/LineChart.tsx)",
+      "Bash(sed -i '' 's|<div key={m.key} className=\"card p-4\">|<div key={m.key} className=\"card min-w-0 p-4\">|' src/dashboard/Irrigation.tsx)",
+      "Bash(sed -i '' 's|                      <div key={k}>\\\\n                        <p className=\"mb-1|X|' src/dashboard/ZoneDetail.tsx)"
+    ]
+  }
+}

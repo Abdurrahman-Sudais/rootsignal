@@ -15,6 +15,7 @@ import { usePageMeta } from '../lib/usePageMeta';
 import { PageHeader, QualityChips, StatCard, SummaryCard, ZoneThumb } from './parts';
 import { useDashboard } from './store';
 import { useDashboardUI } from './uiContext';
+import { AssistantPanel } from './AssistantPanel';
 
 const rank = { high: 0, medium: 1, low: 2 } as const;
 
@@ -38,6 +39,8 @@ export default function Overview() {
         <StatCard label="Observations, last 7 days" value={recentObs.length} hint={`${data.observations.length} in total`} Icon={Images} />
         <StatCard label="Data-quality issues" value={issues.length} hint={`across ${new Set(issues.map((i) => i.zoneId)).size} zones`} Icon={Database} tone={issues.length ? 'warn' : 'default'} />
       </div>
+
+      <div className="mt-6"><AssistantPanel /></div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.6fr_1fr]">
         <section className="card overflow-hidden" aria-labelledby="prio-h">

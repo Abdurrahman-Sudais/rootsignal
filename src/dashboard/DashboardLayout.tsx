@@ -13,7 +13,9 @@ import {
   Settings as SettingsIcon,
   Users,
   X,
+  Lock,
 } from 'lucide-react';
+import { ROLE_LABEL, roleOf } from './access';
 import { Wordmark } from '../components/Logo';
 import { SampleBadge, buttonClass } from '../components/ui';
 import { DEMO_TODAY, formatDate } from '../lib/dates';
@@ -31,11 +33,12 @@ const nav = [
   { to: '/dashboard/inspections', label: 'Inspection Queue', Icon: ClipboardList, badge: true },
   { to: '/dashboard/reports', label: 'Reports', Icon: FileBarChart },
   { to: '/dashboard/team', label: 'Team', Icon: Users },
+  { to: '/dashboard/audit', label: 'Audit & roles', Icon: Lock },
   { to: '/dashboard/settings', label: 'Settings', Icon: SettingsIcon },
 ];
 
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
-  const { data } = useDashboard();
+  const { data, userId, setUser } = useDashboard();
   const open = data.inspections.filter((i) => i.state !== 'complete').length;
   return (
     <div className="flex h-full flex-col">
@@ -72,6 +75,10 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         </ul>
       </nav>
       <div className="border-t border-white/10 p-4">
+        <label htmlFor="demo-as" className="mb-1.5 block text-[10px] uppercase tracking-wider text-sage-300">Demo as</label>
+        <select id="demo-as" aria-label="Demo as user" className="mb-4 w-full rounded-md border border-white/15 bg-forest-950 px-2 py-1.5 text-xs text-root focus:outline-none" value={userId} onChange={(e) => setUser(e.target.value)}>
+          {data.team.map((m) => <option key={m.id} value={m.id}>{m.name} · {ROLE_LABEL[roleOf(m.id)]}</option>)}
+        </select>
         <Link to="/" className="flex items-center gap-2 text-xs text-root/60 hover:text-root">
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Back to website
         </Link>
@@ -116,7 +123,7 @@ function Shell() {
       const zone = data.zones.find((z) => z.id === obs.zoneId);
       const next = Math.max(1000, ...data.inspections.map((i) => Number(i.id.replace(/\D/g, '')) || 0)) + 1;
       const id = `INS-${next}`;
-      dispatch({
+      const ok = dispatch({
         type: 'createInspection',
         inspection: {
           id,
@@ -129,7 +136,7 @@ function Shell() {
           notes: [],
         },
       });
-      setInspectionId(id);
+      if (ok) setInspectionId(id);
     },
     [data, dispatch],
   );

@@ -39,7 +39,7 @@ function Section({ title, Icon, children, aside }: { title: string; Icon: typeof
 
 export default function ZoneDetail() {
   const { zoneId } = useParams();
-  const { data, dispatch } = useDashboard();
+  const { data, dispatch, can } = useDashboard();
   const ui = useDashboardUI();
   const zone = data.zones.find((z) => z.id === zoneId);
   usePageMeta(zone ? `${zone.id} · ${zone.crop}` : 'Zone not found');
@@ -82,11 +82,11 @@ export default function ZoneDetail() {
         description={`${zone.cultivar} · ${zone.system} · ${zone.name} · ${zone.areaM2.toLocaleString()} m² · ${zone.plantCount.toLocaleString()} plants · Grower: ${memberName(data, zone.assignedGrowerId)}`}
         actions={
           <>
-            <button type="button" className={buttonClass('secondary', 'px-3 py-2')} onClick={() => ui.openObservationForm(zone.id)}>
+            <button type="button" className={buttonClass('secondary', 'px-3 py-2')} disabled={!can('observe')} onClick={() => ui.openObservationForm(zone.id)}>
               <Plus className="h-4 w-4" /> Log observation
             </button>
             {current && (
-              <button type="button" className={buttonClass('primary', 'px-3 py-2')} onClick={() => ui.openForObservation(current.id)}>
+              <button type="button" className={buttonClass('primary', 'px-3 py-2')} disabled={!can('create') && !data.inspections.some((i) => i.observationId === current.id)} onClick={() => ui.openForObservation(current.id)}>
                 <ClipboardList className="h-4 w-4" /> Open inspection
               </button>
             )}
@@ -98,7 +98,7 @@ export default function ZoneDetail() {
           <label htmlFor="zone-prio" className="text-xs font-medium text-muted">
             Priority
           </label>
-          <select id="zone-prio" className="field w-auto py-1.5" value={zone.priority} onChange={(e) => dispatch({ type: 'setZonePriority', zoneId: zone.id, priority: e.target.value as Priority })}>
+          <select id="zone-prio" className="field w-auto py-1.5 disabled:opacity-60" disabled={!can('priority')} value={zone.priority} onChange={(e) => dispatch({ type: 'setZonePriority', zoneId: zone.id, priority: e.target.value as Priority })}>
             <option value="high">High</option>
             <option value="medium">Medium</option>
             <option value="low">Low</option>
@@ -246,7 +246,7 @@ export default function ZoneDetail() {
                       </option>
                     ))}
                   </select>
-                  <button type="submit" className={buttonClass('primary', 'px-3 py-2')}>
+                  <button type="submit" className={buttonClass('primary', 'px-3 py-2')} disabled={!can('note')}>
                     Add note
                   </button>
                 </div>

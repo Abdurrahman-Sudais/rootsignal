@@ -2,13 +2,18 @@ import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { SiteLayout } from './components/SiteLayout';
 import Home from './pages/Home';
-import Product from './pages/Product';
-import HowItWorks from './pages/HowItWorks';
-import UseCases from './pages/UseCases';
-import Pricing from './pages/Pricing';
-import About from './pages/About';
-import Contact from './pages/Contact';
 import NotFound from './pages/NotFound';
+
+const Product = lazy(() => import('./pages/Product'));
+const HowItWorks = lazy(() => import('./pages/HowItWorks'));
+const UseCases = lazy(() => import('./pages/UseCases'));
+const Pricing = lazy(() => import('./pages/Pricing'));
+const About = lazy(() => import('./pages/About'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Technology = lazy(() => import('./pages/Trust').then((m) => ({ default: m.TechnologyPage })));
+const Security = lazy(() => import('./pages/Trust').then((m) => ({ default: m.SecurityPage })));
+const Privacy = lazy(() => import('./pages/Trust').then((m) => ({ default: m.PrivacyPage })));
+const Terms = lazy(() => import('./pages/Trust').then((m) => ({ default: m.TermsPage })));
 
 const DashboardLayout = lazy(() => import('./dashboard/DashboardLayout'));
 const Overview = lazy(() => import('./dashboard/Overview'));
@@ -20,6 +25,7 @@ const InspectionQueue = lazy(() => import('./dashboard/InspectionQueue'));
 const Reports = lazy(() => import('./dashboard/Reports'));
 const Team = lazy(() => import('./dashboard/Team'));
 const Settings = lazy(() => import('./dashboard/Settings'));
+const Audit = lazy(() => import('./dashboard/Audit'));
 
 function Loading() {
   return (
@@ -41,6 +47,10 @@ export default function App() {
           <Route path="pricing" element={<Pricing />} />
           <Route path="about" element={<About />} />
           <Route path="contact" element={<Contact />} />
+          <Route path="technology" element={<Technology />} />
+          <Route path="security" element={<Security />} />
+          <Route path="privacy" element={<Privacy />} />
+          <Route path="terms" element={<Terms />} />
           <Route path="*" element={<NotFound />} />
         </Route>
         <Route path="dashboard" element={<DashboardLayout />}>
@@ -52,6 +62,7 @@ export default function App() {
           <Route path="inspections" element={<InspectionQueue />} />
           <Route path="reports" element={<Reports />} />
           <Route path="team" element={<Team />} />
+          <Route path="audit" element={<Audit />} />
           <Route path="settings" element={<Settings />} />
           <Route path="*" element={<NotFound inDashboard />} />
         </Route>

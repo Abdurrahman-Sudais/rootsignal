@@ -1,14 +1,28 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { ArrowRight, Mail, Menu, X } from 'lucide-react';
-import { navLinks, site } from '../config/site';
+import { FOUNDERS, footerNav, navLinks, site } from '../config/site';
+import { useRevealOnScroll } from '../lib/motion';
 import { RootMark, Wordmark } from './Logo';
 import { buttonClass } from './ui';
 
+function navClass(to: string, isActive: boolean, mobile = false) {
+  const active = isActive && !to.includes('#');
+  if (mobile) return `block rounded-md px-2 py-3 text-base font-medium ${active ? 'text-forest-900' : 'text-muted'}`;
+  return `rounded-md px-2.5 py-2 text-sm font-medium transition-colors ${active ? 'text-forest-900' : 'text-muted hover:text-forest-900'}`;
+}
+
 function Navbar() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { pathname } = useLocation();
   useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
@@ -17,36 +31,34 @@ function Navbar() {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line/70 bg-paper/90 backdrop-blur">
-      <nav className="container-page flex h-16 items-center justify-between gap-6" aria-label="Main">
+    <header className={`sticky top-0 z-40 border-b backdrop-blur transition-[background-color,box-shadow,border-color] duration-300 ${scrolled || open ? 'border-line/80 bg-paper/90 shadow-[0_8px_30px_-20px_rgba(16,41,28,0.35)]' : 'border-transparent bg-paper/60'}`}>
+      <nav className="container-page flex h-16 items-center justify-between gap-4" aria-label="Main">
         <Wordmark />
-        <ul className="hidden items-center gap-1 lg:flex">
+        <ul className="hidden items-center gap-0.5 xl:flex">
           {navLinks.map((l) => (
             <li key={l.to}>
-              <NavLink
-                to={l.to}
-                className={({ isActive }) =>
-                  `rounded-md px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'text-forest-900' : 'text-muted hover:text-forest-900'}`
-                }
-              >
+              <NavLink to={l.to} end className={({ isActive }) => navClass(l.to, isActive)}>
                 {({ isActive }) => (
                   <span className="relative">
                     {l.label}
-                    {isActive && <span className="absolute -bottom-1.5 left-0 right-0 h-0.5 rounded bg-forest-600" />}
+                    {isActive && !l.to.includes('#') && <span className="absolute -bottom-1.5 left-0 right-0 h-0.5 rounded bg-forest-600" />}
                   </span>
                 )}
               </NavLink>
             </li>
           ))}
         </ul>
-        <div className="hidden items-center gap-2 lg:flex">
-          <Link to="/dashboard" className={buttonClass('primary', 'py-2')}>
-            Explore the Dashboard
+        <div className="hidden items-center gap-2 xl:flex">
+          <Link to="/dashboard" className={buttonClass('ghost', 'py-2')}>
+            Live demo
+          </Link>
+          <Link to="/contact?type=demo" className={buttonClass('primary', 'py-2')}>
+            Request early access
           </Link>
         </div>
         <button
           type="button"
-          className="rounded-md p-2 text-forest-900 lg:hidden"
+          className="rounded-md p-2 text-forest-900 xl:hidden"
           aria-expanded={open}
           aria-controls="mobile-menu"
           aria-label={open ? 'Close menu' : 'Open menu'}
@@ -56,21 +68,21 @@ function Navbar() {
         </button>
       </nav>
       {open && (
-        <div id="mobile-menu" className="animate-fade-up border-t border-line bg-paper lg:hidden">
+        <div id="mobile-menu" className="animate-fade-up max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-line bg-paper xl:hidden">
           <ul className="container-page flex flex-col py-3">
             {navLinks.map((l) => (
               <li key={l.to}>
-                <NavLink
-                  to={l.to}
-                  className={({ isActive }) => `block rounded-md px-2 py-3 text-base font-medium ${isActive ? 'text-forest-900' : 'text-muted'}`}
-                >
+                <NavLink to={l.to} end className={({ isActive }) => navClass(l.to, isActive, true)} onClick={() => setOpen(false)}>
                   {l.label}
                 </NavLink>
               </li>
             ))}
-            <li className="pt-2">
-              <Link to="/dashboard" className={buttonClass('primary', 'w-full')}>
-                Explore the Dashboard <ArrowRight className="h-4 w-4" />
+            <li className="grid gap-2 pt-3 sm:grid-cols-2">
+              <Link to="/contact?type=demo" className={buttonClass('primary', 'w-full')}>
+                Request early access <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link to="/dashboard" className={buttonClass('secondary', 'w-full')}>
+                Explore the live demo
               </Link>
             </li>
           </ul>
@@ -81,23 +93,21 @@ function Navbar() {
 }
 
 function Footer() {
-  const cols = [
-    { title: 'Product', links: [['/product', 'Product overview'], ['/how-it-works', 'How it works'], ['/dashboard', 'Interactive demo'], ['/pricing', 'Pricing']] },
-    { title: 'Growers', links: [['/use-cases#hydroponic', 'Hydroponic farms'], ['/use-cases#greenhouse', 'Greenhouse operations'], ['/use-cases#nursery', 'Commercial nurseries']] },
-    { title: 'Company', links: [['/about', 'About'], ['/contact', 'Contact']] },
-  ];
   return (
     <footer className="bg-forest-900 text-root">
-      <div className="container-page grid gap-10 py-14 md:grid-cols-[1.4fr_repeat(3,1fr)]">
-        <div>
+      <div className="container-page grid grid-cols-1 gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.5fr_repeat(4,minmax(0,1fr))]">
+        <div className="min-w-0 sm:col-span-2 lg:col-span-1">
           <Wordmark inverted />
           <p className="mt-4 max-w-xs font-display text-lg italic text-sage-300">{site.tagline}</p>
-          <a href={`mailto:${site.email}`} className="mt-6 inline-flex items-center gap-2 text-sm text-root/80 hover:text-white">
-            <Mail className="h-4 w-4" aria-hidden="true" /> {site.email}
+          <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1 text-xs text-root/80">
+            <span className="live-dot !bg-sage-300" aria-hidden="true" /> Early access open
+          </p>
+          <a href={`mailto:${site.email}`} className="mt-5 flex items-center gap-2 break-all text-sm text-root/80 hover:text-white">
+            <Mail className="h-4 w-4 shrink-0" aria-hidden="true" /> {site.email}
           </a>
         </div>
-        {cols.map((c) => (
-          <div key={c.title}>
+        {footerNav.map((c) => (
+          <div key={c.title} className="min-w-0">
             <h2 className="font-sans text-xs font-semibold uppercase tracking-wider text-sage-300">{c.title}</h2>
             <ul className="mt-4 space-y-2.5">
               {c.links.map(([to, label]) => (
@@ -112,11 +122,20 @@ function Footer() {
         ))}
       </div>
       <div className="border-t border-white/10">
-        <div className="container-page flex flex-col gap-3 py-6 text-xs text-root/60 sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex items-center gap-2">
-            <RootMark className="h-4 w-4" inverted /> © {new Date().getFullYear()} Rootsignal · {site.domain}
+        <div className="container-page flex flex-col gap-3 py-6 text-xs text-root/60 lg:flex-row lg:items-center lg:justify-between">
+          <p className="flex flex-wrap items-center gap-2">
+            <RootMark className="h-4 w-4" inverted /> © {new Date().getFullYear()} Rootsignal · {site.domain} · Founded by{' '}
+            {FOUNDERS.map((f, i) => (
+              <span key={f.name}>
+                {i > 0 && ' & '}
+                <Link to="/about#team" className="text-root/80 hover:text-white">
+                  {f.name}
+                </Link>{' '}
+                ({f.role})
+              </span>
+            ))}
           </p>
-          <p>Rootsignal organises observations and supports inspection decisions. It does not diagnose plant disease or prescribe treatment.</p>
+          <p className="max-w-xl">Rootsignal organises observations and supports inspection decisions. It does not diagnose plant disease or prescribe treatment.</p>
         </div>
       </div>
     </footer>
@@ -125,12 +144,30 @@ function Footer() {
 
 export function SiteLayout() {
   const { pathname, hash } = useLocation();
+  useRevealOnScroll(pathname);
   useEffect(() => {
-    if (hash) {
-      document.getElementById(hash.slice(1))?.scrollIntoView();
-    } else {
+    if (!hash) {
       window.scrollTo(0, 0);
+      return;
     }
+    // Lazy routes and reveal content may not exist yet: retry until the anchor is mounted, then settle again.
+    let tries = 0;
+    let settle = 0;
+    const id = decodeURIComponent(hash.slice(1));
+    const timer = window.setInterval(() => {
+      const el = document.getElementById(id);
+      if (el || ++tries > 40) {
+        window.clearInterval(timer);
+        if (el) {
+          el.scrollIntoView({ block: 'start' });
+          settle = window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }), 450);
+        }
+      }
+    }, 50);
+    return () => {
+      window.clearInterval(timer);
+      window.clearTimeout(settle);
+    };
   }, [pathname, hash]);
   return (
     <div className="flex min-h-screen flex-col">

@@ -46,7 +46,7 @@ export function validateObservation(f: FormState): Errors {
 }
 
 export function ObservationModal({ open, zoneId, onClose }: { open: boolean; zoneId?: string; onClose: () => void }) {
-  const { data, dispatch } = useDashboard();
+  const { data, dispatch, can } = useDashboard();
   const blank = (): FormState => ({ zoneId: zoneId ?? '', date: DEMO_TODAY, capturedById: '', method: '', quality: 'good', notes: '', ph: '', ec: '', temp: '', volume: '' });
   const [form, setForm] = useState<FormState>(blank);
   const [file, setFile] = useState<File | null>(null);
@@ -229,7 +229,7 @@ export function ObservationModal({ open, zoneId, onClose }: { open: boolean; zon
             <button type="button" className={buttonClass('ghost')} onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className={buttonClass('primary')}>
+            <button type="submit" className={buttonClass('primary')} disabled={!can('observe')}>
               Save observation
             </button>
           </div>

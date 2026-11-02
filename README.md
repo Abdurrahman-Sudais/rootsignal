@@ -91,3 +91,20 @@ There is **no live sensor connectivity** anywhere in this build.
 ## Imagery
 
 Illustrations are hand-built SVG in the brand palette, and root images are procedural, so the demo has no third-party image licensing concerns. For production marketing, swap the `UseCaseScene` and `ChannelCrossSection` components in `src/components/Illustrations.tsx` for licensed greenhouse and root-system photography.
+
+## Launch readiness
+
+- **Founders:** Dave Michael (Founder/CEO) and Yusuf Abdulhamid (Co-founder/CTO) — edit `FOUNDERS` in `src/config/site.ts`.
+- **Lead form:** set `VITE_HUBSPOT_PORTAL_ID`, `VITE_HUBSPOT_FORM_GUID` and optionally `VITE_HUBSPOT_MARKETING_SUBSCRIPTION_ID` (see `.env.example`). Without them the form saves to the browser and offers a pre-filled email.
+- **Demo roles & audit:** “Demo as” in the dashboard sidebar switches between head grower, inspections lead, grower and irrigation technician; every action is permission-checked and logged at `/dashboard/audit`.
+- **Assistant:** answers from the sample records only and refuses diagnosis, treatment and yield prediction (`src/dashboard/assistant.ts`).
+- **Hosting:** `public/_redirects`, `public/_headers` and `vercel.json` serve the SPA on Netlify, Cloudflare Pages or Vercel. OG image, icons, manifest, sitemap and Organization JSON-LD are included.
+- **Tests:** `npm test` (Vitest).
+
+### Content to confirm before launch
+
+- Problem statistics on the home page (`PROBLEM_STATS` in `src/pages/Home.tsx`) are from Cuesta Roble (2019), USDA NASS 2019 Census of Horticultural Specialties and Stanghellini & Kronland, *Plant Disease* 70 (1986). Re-check the figures and links.
+- The contact email is `yusuf@rootsignal.top` while the Founder/CEO is Dave Michael — confirm this is the intended public address.
+- Founder bios describe roles only; replace with confirmed biographies.
+- Privacy notice and terms are review drafts; add operator details, governing law and the confirmed form service.
+- AWS architecture on `/technology` is proposed, not deployed.

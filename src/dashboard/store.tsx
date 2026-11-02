@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState, type ReactNode } from 'react';
+import { can as roleCan, roleOf, type AuditEntry, type DemoRole, type Permission } from './access';
 import { createSampleData } from '../data/greenhouse';
 import type {
   DashboardData,
@@ -13,6 +14,8 @@ import type {
 import { DEMO_TODAY } from '../lib/dates';
 
 const STORAGE_KEY = 'rootsignal-demo-v1';
+/** Acting user and audit log live under their own key so the demo data format is unchanged. */
+const ACCESS_KEY = 'rootsignal-access-v1';
 
 type Action =
   | { type: 'addObservation'; observation: Observation; reading?: IrrigationReading }
@@ -25,6 +28,56 @@ type Action =
   | { type: 'setZonePriority'; zoneId: string; priority: Priority }
   | { type: 'updateSettings'; settings: Partial<DashboardSettings> }
   | { type: 'reset' };
+
+/** Which permission each action needs. Resetting this browser's demo data is open to everyone. */
+export function permissionFor(a: Action): Permission | null {
+  switch (a.type) {
+    case 'addObservation':
+      return 'observe';
+    case 'addNote':
+      return 'note';
+    case 'createInspection':
+      return 'create';
+    case 'assignInspection':
+      return 'assign';
+    case 'addInspectionNote':
+    case 'recordFinding':
+      return 'inspect';
+    case 'completeInspection':
+      return 'complete';
+    case 'setZonePriority':
+      return 'priority';
+    case 'updateSettings':
+      return 'settings';
+    default:
+      return null;
+  }
+}
+
+function describe(a: Action): string {
+  switch (a.type) {
+    case 'addObservation':
+      return `${a.observation.zoneId}: observation ${a.observation.id} added${a.reading ? ' with an irrigation reading' : ''}.`;
+    case 'addNote':
+      return `${a.note.zoneId}: note added.`;
+    case 'createInspection':
+      return `${a.inspection.zoneId}: inspection ${a.inspection.id} opened.`;
+    case 'assignInspection':
+      return `${a.id}: ${a.assigneeId ? `assigned to ${a.assigneeId}` : 'unassigned'}.`;
+    case 'addInspectionNote':
+      return `${a.id}: inspection note added.`;
+    case 'recordFinding':
+      return `${a.id}: finding recorded (${a.category}).`;
+    case 'completeInspection':
+      return `${a.id}: completed; zone priority set to ${a.zonePriority}.`;
+    case 'setZonePriority':
+      return `${a.zoneId}: priority set to ${a.priority}.`;
+    case 'updateSettings':
+      return `Settings changed: ${Object.keys(a.settings).join(', ')}.`;
+    default:
+      return a.type;
+  }
+}
 
 let counter = 0;
 export const uid = (prefix: string) => `${prefix}-${Date.now().toString(36)}${(counter++).toString(36)}`;
@@ -88,13 +141,54 @@ function load(): DashboardData {
 
 interface Ctx {
   data: DashboardData;
-  dispatch: React.Dispatch<Action>;
+  /** Permission-checked dispatch: refused actions are ignored (returns false); permitted changes are audited. */
+  dispatch: (a: Action) => boolean;
+  userId: string;
+  role: DemoRole;
+  can: (p: Permission) => boolean;
+  setUser: (id: string) => void;
+  audit: AuditEntry[];
+}
+
+function loadAccess(): { userId: string; audit: AuditEntry[] } {
+  try {
+    const raw = localStorage.getItem(ACCESS_KEY);
+    if (raw) {
+      const p = JSON.parse(raw) as { userId?: string; audit?: AuditEntry[] };
+      return { userId: typeof p.userId === 'string' ? p.userId : 'amara', audit: Array.isArray(p.audit) ? p.audit : [] };
+    }
+  } catch {
+    /* ignore */
+  }
+  return { userId: 'amara', audit: [] };
 }
 
 const DashboardContext = createContext<Ctx | null>(null);
 
 export function DashboardProvider({ children }: { children: ReactNode }) {
-  const [data, dispatch] = useReducer(reducer, undefined, load);
+  const [data, rawDispatch] = useReducer(reducer, undefined, load);
+  const [access, setAccess] = useState(loadAccess);
+  useEffect(() => {
+    try {
+      localStorage.setItem(ACCESS_KEY, JSON.stringify(access));
+    } catch {
+      /* ignore */
+    }
+  }, [access]);
+  const role = roleOf(access.userId);
+  const allowed = useCallback((p: Permission) => roleCan(role, p), [role]);
+  const dispatch = useCallback(
+    (a: Action) => {
+      const need = permissionFor(a);
+      if (need && !allowed(need)) return false;
+      rawDispatch(a);
+      if (a.type === 'reset') setAccess((s) => ({ ...s, audit: [] }));
+      if (need) setAccess((s) => ({ ...s, audit: [...s.audit, { id: uid('AU'), at: new Date().toISOString(), userId: s.userId, action: need, detail: describe(a) }] }));
+      return true;
+    },
+    [allowed],
+  );
+  const setUser = useCallback((id: string) => setAccess((s) => ({ ...s, userId: id })), []);
   useEffect(() => {
     try {
       // Uploaded images are session-only object URLs; don't persist them.
@@ -104,7 +198,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       /* ignore */
     }
   }, [data]);
-  const value = useMemo(() => ({ data, dispatch }), [data]);
+  const value = useMemo(() => ({ data, dispatch, userId: access.userId, role, can: allowed, setUser, audit: access.audit }), [data, dispatch, access, role, allowed, setUser]);
   return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>;
 }
 

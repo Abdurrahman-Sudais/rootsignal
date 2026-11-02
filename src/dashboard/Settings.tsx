@@ -9,7 +9,7 @@ import { useDashboard } from './store';
 
 export default function Settings() {
   usePageMeta('Settings');
-  const { data, dispatch } = useDashboard();
+  const { data, dispatch, can } = useDashboard();
   const [form, setForm] = useState({
     organisation: data.settings.organisation,
     site: data.settings.site,
@@ -72,7 +72,7 @@ export default function Settings() {
             {field('observationIntervalDays', 'Observation interval (days)', <InfoTip content="Zones without an observation in this many days are flagged as overdue." />, 'number')}
           </div>
           <div className="flex items-center gap-3">
-            <button type="submit" className={buttonClass('primary')}>
+            <button type="submit" className={buttonClass('primary')} disabled={!can('settings')} title={can('settings') ? undefined : 'Only the head grower can change site settings'}>
               Save settings
             </button>
             {saved && (

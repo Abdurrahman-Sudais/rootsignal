@@ -13,7 +13,7 @@ import { useDashboard } from './store';
 const stepsDef = ['Review evidence', 'Notes & assignment', 'Record finding'] as const;
 
 export function InspectionModal({ inspectionId, onClose }: { inspectionId: string | null; onClose: () => void }) {
-  const { data, dispatch } = useDashboard();
+  const { data, dispatch, can } = useDashboard();
   const insp = data.inspections.find((i) => i.id === inspectionId);
   const [step, setStep] = useState(0);
   const [note, setNote] = useState('');
@@ -157,7 +157,7 @@ export function InspectionModal({ inspectionId, onClose }: { inspectionId: strin
             <select
               id="insp-assignee"
               className="field"
-              disabled={complete}
+              disabled={complete || !can('assign')}
               value={insp.assigneeId ?? ''}
               onChange={(e) => {
                 dispatch({ type: 'assignInspection', id: insp.id, assigneeId: e.target.value || undefined });
@@ -199,7 +199,7 @@ export function InspectionModal({ inspectionId, onClose }: { inspectionId: strin
                     </option>
                   ))}
                 </select>
-                <button type="button" className={buttonClass('secondary', 'px-3 py-2')} onClick={addNote} disabled={complete}>
+                <button type="button" className={buttonClass('secondary', 'px-3 py-2')} onClick={addNote} disabled={complete || !can('inspect')}>
                   Add note
                 </button>
               </div>
@@ -240,7 +240,7 @@ export function InspectionModal({ inspectionId, onClose }: { inspectionId: strin
               if (saveFinding()) dispatch({ type: 'completeInspection', id: insp.id, zonePriority });
             }}
           >
-            <fieldset disabled={complete} className="space-y-4">
+            <fieldset disabled={complete || !can('inspect')} className="space-y-4">
               <div>
                 <label htmlFor="insp-cat" className="label">Finding *</label>
                 <select
@@ -284,7 +284,7 @@ export function InspectionModal({ inspectionId, onClose }: { inspectionId: strin
                 <button type="button" className={buttonClass('secondary')} onClick={saveFinding}>
                   Save finding
                 </button>
-                <button type="submit" className={buttonClass('primary')}>
+                <button type="submit" className={buttonClass('primary')} disabled={!can('complete')} title={can('complete') ? undefined : 'Only the head grower or inspections lead can complete inspections'}>
                   <CheckCircle2 className="h-4 w-4" /> Mark inspection complete
                 </button>
               </div>
